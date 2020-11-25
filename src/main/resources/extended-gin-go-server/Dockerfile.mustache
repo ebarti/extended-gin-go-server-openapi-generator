@@ -1,0 +1,20 @@
+FROM golang:alpine AS builder
+RUN apk add --no-cache git
+
+WORKDIR /go/src
+COPY . .
+RUN go get -d -v ./...
+
+{{#typeARM64}}
+RUN GIN_MODE=release GOOS=linux GOARCH=amd64 go build -v .
+FROM arm64/alpine AS runtime
+{{/typeARM64}}
+
+{{#typeAMD64}}
+RUN GIN_MODE=release GOOS=linux GOARCH=arm64 go build -v .
+FROM amd64/alpine AS runtime
+{{/typeAMD64}}
+
+COPY --from=builder /go/src/{{packageName}} ./
+EXPOSE {{serverPort}}/tcp
+ENTRYPOINT ["./proof-of-concept-go"]
