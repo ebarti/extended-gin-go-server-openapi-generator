@@ -1,5 +1,6 @@
 package com.ebarti.openapi.codegen;
 
+import io.swagger.v3.oas.models.OpenAPI;
 import org.openapitools.codegen.languages.AbstractGoCodegen;
 import org.openapitools.codegen.CliOption;
 import org.openapitools.codegen.CodegenConstants;
@@ -108,6 +109,13 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
     }
 
     @Override
+    public Map<String, Object> postProcessModels(Map<String, Object> objs) {
+        return super.postProcessModels(objs);
+        // Process the operations in a format gin can better understand
+
+    }
+
+    @Override
     public Map<String, Object> postProcessOperationsWithModels(Map<String, Object> objs, List<Object> allModels) {
         objs = super.postProcessOperationsWithModels(objs, allModels);
 
@@ -117,9 +125,9 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
             if (op.path != null) {
                 op.path = op.path.replaceAll("\\{(.*?)\\}", ":$1");
             }
-        }
-        // Process the operations in a format gin can better understand
+            // Process the operations in a format gin can better understand
 
+        }
         return objs;
     }
 
@@ -163,7 +171,7 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
         supportingFiles.add(new SupportingFile("Dockerfile.mustache", "", "Dockerfile"));
         supportingFiles.add(new SupportingFile("routers.mustache", packageName, "routers.go"));
         supportingFiles.add(new SupportingFile("go.mod.mustache", "", "go.mod"));
-        supportingFiles.add(new SupportingFile("logger.mustache", packageName, "logger.go"));
+        supportingFiles.add(new SupportingFile("utils.mustache", packageName, "utils.go"));
         supportingFiles.add(new SupportingFile("impl.mustache", packageName, "impl.go"));
         supportingFiles.add(new SupportingFile("helpers.mustache", packageName, "helpers.go"));
         supportingFiles.add(new SupportingFile("README.mustache", "", "README.md")

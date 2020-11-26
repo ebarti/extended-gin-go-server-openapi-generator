@@ -25,3 +25,12 @@ func Logger() gin.HandlerFunc {
         log.Println(status)
     }
 }
+
+func Recovery() gin.HandlerFunc {
+    return func(c *gin.Context, recovered interface{}) {
+        if err, ok := recovered.(string); ok {
+            c.String(http.StatusInternalServerError, fmt.Sprintf("error: %s", err))
+        }
+        c.AbortWithStatus(http.StatusInternalServerError)
+    }
+}

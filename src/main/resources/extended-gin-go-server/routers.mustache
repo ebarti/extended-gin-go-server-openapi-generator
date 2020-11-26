@@ -1,9 +1,8 @@
 {{>partial_header}}
-package {{apiPath}}
+package {{packageName}}
 
 import (
 	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,6 +25,12 @@ type Routes []Route
 func NewRouter() *gin.Engine {
 	router := gin.new()
     router.Use(Logger())
+    router.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
+		if err, ok := recovered.(string); ok {
+			c.String(http.StatusInternalServerError, fmt.Sprintf("error: %s", err))
+		}
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}))
 	for _, route := range routes {
 		switch route.Method {
 		case http.MethodGet:
@@ -62,6 +67,45 @@ var routes = Routes{
 		"{{{basePathWithoutHost}}}{{{path}}}",
 		{{operationId}},
 	},{{/operation}}{{/operations}}{{/apis}}{{/apiInfo}}
+}
+
+
+// ReadFormFileToTempFile reads file data from a request form and writes it to a temporary file
+func ReadFormFileToTempFile(r *http.Request, key string) (*os.File, error) {
+	r.ParseForm()
+	formFile, _, err := r.FormFile(key)
+	if err != nil {
+		return nil, err
+	}
+
+	defer formFile.Close()
+	file, err := ioutil.TempFile("tmp", key)
+	if err != nil {
+		return nil, err
+	}
+
+	defer file.Close()
+	fileBytes, err := ioutil.ReadAll(formFile)
+	if err != nil {
+		return nil, err
+	}
+
+	file.Write(fileBytes)
+	return file, nil
+}
+
+// parseInt64Parameter parses a sting parameter to an int64
+func parseInt64Parameter(param string) (int64, error) {
+	return strconv.ParseInt(param, 10, 64)
+}
+
+// parseInt32Parameter parses a sting parameter to an int32
+func parseInt32Parameter(param string) (int32, error) {
+	val, err := strconv.ParseInt(param, 10, 32)
+	if err != nil {
+		return -1, err
+	}
+	return int32(val), nil
 }
 
 

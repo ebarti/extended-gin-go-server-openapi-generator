@@ -1,5 +1,5 @@
 {{>partial_header}}
-package {{apiPath}}
+package {{packageName}}
 
 {{#operations}}
 import (
@@ -14,43 +14,23 @@ func {{nickname}}(c *gin.Context) {
 }
 {{/operation}}
 {{/operations}}
+
+{{! }}
+
 {{! ITERATE FOR EACH OPERATION }}
 {{#operations}}
     {{#operation}}
 {{! FUNCTION PROTOTYPE }}
 // {{nickname}} - {{{summary}}}
 func {{nickname}}(c *gin.Context){
-{{!
-    BINDING
-////////////////////////////////
-    PATH PARAMETER BINDING -> BIND ALL PARAMS (ALL PATH PARAMS ARE BY DEFAULT REQUIRED)
-}}
+{{! VALIDATE PARAMETERS }}
 
-{{!
-    QUERY PARAMETER BINDING
-}}
-{{! }}
-{{! }}
-
-
-        {{#hasFormParams}}
-    err := r.ParseForm()
-    if err != nil {
-        w.WriteHeader(500)
-        return
-    }
-        {{/hasFormParams}}
-        {{#hasPathParams}}
-    params := mux.Vars(r)
-        {{/hasPathParams}}
-        {{#hasQueryParams}}
-    query := c.Request.URL.Query()
-        {{/hasQueryParams}}
         {{#allParams}}
-{{! PATH PARAM PARSING WITH GIN:  c.Query("paramName") }}
             {{#isPathParam}}
+                {{paramName}} := c.Param("{{paramName}}")
+
                 {{#isLong}}
-    {{paramName}}, err := parseInt64Parameter(query.Get("{{paramName}}"))
+    {{paramName}}, err := parseInt64Parameter(c.Param("{{paramName}}"))
     if err != nil {
         w.WriteHeader(500)
         return
