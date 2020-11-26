@@ -18,18 +18,18 @@ import java.util.Map;
 
 public class ExtendedGoServerGenerator extends AbstractGoCodegen {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ExtendedGoServerGenerator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExtendedGoServerGenerator.class);
 
-  // source folder where to write the files
-  protected int serverPort = 8080;
-  protected String apiVersion = "1.0.0";
-  protected String initialPackageName = "github.com" + File.separator + "ebarti" + File.separator + "extendedgingoserver";
+    // source folder where to write the files
+    protected int serverPort = 8080;
+    protected String apiVersion = "1.0.0";
+    protected String initialPackageName = "github.com" + File.separator + "ebarti" + File.separator + "extendedgingoserver";
 
 
-  public ExtendedGoServerGenerator() {
-    super();
+    public ExtendedGoServerGenerator() {
+        super();
 
-    modifyFeatureSet(features -> features
+        modifyFeatureSet(features -> features
                 .includeDocumentationFeatures(DocumentationFeature.Readme)
                 .wireFormatFeatures(EnumSet.of(WireFormatFeature.JSON, WireFormatFeature.XML))
                 .securityFeatures(EnumSet.noneOf(
@@ -49,41 +49,44 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
                 )
         );
 
-    // set the output folder here
-    outputFolder = "generated-code/extended-gin-go-server";
+        // set the output folder here
+        outputFolder = "generated-code/extended-gin-go-server";
 
-    /**
-     * Models.  You can write model files using the modelTemplateFiles map.
-     * if you want to create one template for file, you can do so here.
-     * for multiple files for model, just put another entry in the `modelTemplateFiles` with
-     * a different extension
-     */
-    modelTemplateFiles.put(
-      "model.mustache", // the template to use
-      ".sample");       // the extension for each file to write
+        /**
+         * Models.  You can write model files using the modelTemplateFiles map.
+         * if you want to create one template for file, you can do so here.
+         * for multiple files for model, just put another entry in the `modelTemplateFiles` with
+         * a different extension
+         */
+        modelTemplateFiles.put(
+                "model.mustache", // the template to use
+                ".sample");       // the extension for each file to write
 
-    /**
-     * Api classes.  You can write classes for each Api file with the apiTemplateFiles map.
-     * as with models, add multiple entries with different extensions for multiple files per
-     * class
-     */
-    apiTemplateFiles.put(
+        /**
+         * Api classes.  You can write classes for each Api file with the apiTemplateFiles map.
+         * as with models, add multiple entries with different extensions for multiple files per
+         * class
+         */
+        apiTemplateFiles.put(
+                "controller-api.mustache",   // the template to use
+                ".go");       // the extension for each file to write
+
+        apiTemplateFiles.put(
                 "controller-api.mustache",   // the template to use
                 ".go");       // the extension for each file to write
 
 
+        /**
+         * Template Location.  This is the location which templates will be read from.  The generator
+         * will use the resource stream to attempt to read the templates.
+         */
+        embeddedTemplateDir = templateDir = "extended-gin-go-server";
 
-    /**
-     * Template Location.  This is the location which templates will be read from.  The generator
-     * will use the resource stream to attempt to read the templates.
-     */
-    embeddedTemplateDir = templateDir = "extended-gin-go-server";
-
-    /**
-     * Reserved words.  Override this with reserved words specific to your language
-     */
-    setReservedWordsLowerCase(
-            Arrays.asList(
+        /**
+         * Reserved words.  Override this with reserved words specific to your language
+         */
+        setReservedWordsLowerCase(
+                Arrays.asList(
                         // data type
                         "string", "bool", "uint", "uint8", "uint16", "uint32", "uint64",
                         "int", "int8", "int16", "int32", "int64", "float32", "float64",
@@ -98,12 +101,13 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
         );
 
 
-    CliOption optServerPort = new CliOption("serverPort", "The network port the generated server binds to");
-    optServerPort.setType("int");
-    optServerPort.defaultValue(Integer.toString(serverPort));
-    cliOptions.add(optServerPort);
-  }
-  @Override
+        CliOption optServerPort = new CliOption("serverPort", "The network port the generated server binds to");
+        optServerPort.setType("int");
+        optServerPort.defaultValue(Integer.toString(serverPort));
+        cliOptions.add(optServerPort);
+    }
+
+    @Override
     public Map<String, Object> postProcessOperationsWithModels(Map<String, Object> objs, List<Object> allModels) {
         objs = super.postProcessOperationsWithModels(objs, allModels);
 
@@ -114,6 +118,8 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
                 op.path = op.path.replaceAll("\\{(.*?)\\}", ":$1");
             }
         }
+        // Process the operations in a format gin can better understand
+
         return objs;
     }
 
@@ -133,13 +139,13 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
          * are available in models, apis, and supporting files
          */
         if (additionalProperties.containsKey("apiVersion")) {
-            this.apiVersion = (String)additionalProperties.get("apiVersion");
+            this.apiVersion = (String) additionalProperties.get("apiVersion");
         } else {
             additionalProperties.put("apiVersion", apiVersion);
         }
 
         if (additionalProperties.containsKey("serverPort")) {
-            this.serverPort = Integer.parseInt((String)additionalProperties.get("serverPort"));
+            this.serverPort = Integer.parseInt((String) additionalProperties.get("serverPort"));
         } else {
             additionalProperties.put("serverPort", serverPort);
         }
@@ -158,9 +164,8 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
         supportingFiles.add(new SupportingFile("routers.mustache", packageName, "routers.go"));
         supportingFiles.add(new SupportingFile("go.mod.mustache", "", "go.mod"));
         supportingFiles.add(new SupportingFile("logger.mustache", packageName, "logger.go"));
-        supportingFiles.add(new SupportingFile("impl.mustache",packageName, "impl.go"));
+        supportingFiles.add(new SupportingFile("impl.mustache", packageName, "impl.go"));
         supportingFiles.add(new SupportingFile("helpers.mustache", packageName, "helpers.go"));
-        supportingFiles.add(new SupportingFile("api.mustache", packageName, "api.go"));
         supportingFiles.add(new SupportingFile("README.mustache", "", "README.md")
                 .doNotOverwrite());
     }
@@ -171,51 +176,51 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
     }
 
 
-  /**
-   * Configures the type of generator.
-   *
-   * @return  the CodegenType for this generator
-   * @see     org.openapitools.codegen.CodegenType
-   */
-  public CodegenType getTag() {
-    return CodegenType.SERVER;
-  }
-
-  /**
-   * Configures a friendly name for the generator.  This will be used by the generator
-   * to select the library with the -g flag.
-   *
-   * @return the friendly name for the generator
-   */
-  public String getName() {
-    return "extended-gin-go-server";
-  }
-
-
-  /**
-   * Returns human-friendly help for the generator.  Provide the consumer with help
-   * tips, parameters here
-   *
-   * @return A string value for the help message
-   */
-  public String getHelp() {
-    return "Generates an extended gin-go-server server library.";
-  }
+    /**
+     * Configures the type of generator.
+     *
+     * @return the CodegenType for this generator
+     * @see org.openapitools.codegen.CodegenType
+     */
+    public CodegenType getTag() {
+        return CodegenType.SERVER;
+    }
 
     /**
-   * Location to write model files.  You can use the modelPackage() as defined when the class is
-   * instantiated
-   */
-  public String modelFileFolder() {
+     * Configures a friendly name for the generator.  This will be used by the generator
+     * to select the library with the -g flag.
+     *
+     * @return the friendly name for the generator
+     */
+    public String getName() {
+        return "extended-gin-go-server";
+    }
+
+
+    /**
+     * Returns human-friendly help for the generator.  Provide the consumer with help
+     * tips, parameters here
+     *
+     * @return A string value for the help message
+     */
+    public String getHelp() {
+        return "Generates an extended gin-go-server server library.";
+    }
+
+    /**
+     * Location to write model files.  You can use the modelPackage() as defined when the class is
+     * instantiated
+     */
+    public String modelFileFolder() {
         return outputFolder + File.separator + apiPackage();
     }
 
-  /**
-   * Location to write api files.  You can use the apiPackage() as defined when the class is
-   * instantiated
-   */
-  @Override
-  public String apiFileFolder() {
+    /**
+     * Location to write api files.  You can use the apiPackage() as defined when the class is
+     * instantiated
+     */
+    @Override
+    public String apiFileFolder() {
         return outputFolder + File.separator + apiPackage();
     }
 

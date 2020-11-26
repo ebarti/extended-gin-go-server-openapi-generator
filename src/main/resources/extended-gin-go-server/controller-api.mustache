@@ -20,7 +20,19 @@ func {{nickname}}(c *gin.Context) {
 {{! FUNCTION PROTOTYPE }}
 // {{nickname}} - {{{summary}}}
 func {{nickname}}(c *gin.Context){
-{{! FORM PARAMS }}
+{{!
+    BINDING
+////////////////////////////////
+    PATH PARAMETER BINDING -> BIND ALL PARAMS (ALL PATH PARAMS ARE BY DEFAULT REQUIRED)
+}}
+
+{{!
+    QUERY PARAMETER BINDING
+}}
+{{! }}
+{{! }}
+
+
         {{#hasFormParams}}
     err := r.ParseForm()
     if err != nil {
@@ -100,7 +112,7 @@ func {{nickname}}(c *gin.Context){
                     {{/isInteger}}
                     {{^isFile}}{{^isLong}}
     {{paramName}} := r.FormValue("{{paramName}}")
-                {{/isLong}}{{/isFile}}
+                    {{/isLong}}{{/isFile}}
                 {{/isFormParam}}
                 {{#isHeaderParam}}
     {{paramName}} := r.Header.Get("{{paramName}}")
