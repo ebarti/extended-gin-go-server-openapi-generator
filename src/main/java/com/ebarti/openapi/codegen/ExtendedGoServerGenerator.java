@@ -71,6 +71,8 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
                 "controller-api.mustache",   // the template to use
                 ".go");       // the extension for each file to write
 
+
+
     /**
      * Template Location.  This is the location which templates will be read from.  The generator
      * will use the resource stream to attempt to read the templates.

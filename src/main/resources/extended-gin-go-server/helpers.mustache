@@ -1,8 +1,12 @@
 {{>partial_header}}
 package {{apiPath}}
 
+import (
+	"github.com/gin-gonic/gin"
+)
+
 //Response return a ImplResponse struct filled
-func Response(code int, body interface{}) ImplResponse {
+func Response(code int, body gin.H{}) ImplResponse {
 	return ImplResponse{Code: code, Body: body}
 }
 

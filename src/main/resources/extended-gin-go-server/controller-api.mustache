@@ -11,95 +11,109 @@ import (
 // {{nickname}} - {{{summary}}}
 func {{nickname}}(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
-}{{/operation}}{{/operations}}
-
-{{#operations}}{{#operation}}
-
+}
+{{/operation}}
+{{/operations}}
+{{! ITERATE FOR EACH OPERATION }}
+{{#operations}}
+    {{#operation}}
+{{! FUNCTION PROTOTYPE }}
 // {{nickname}} - {{{summary}}}
 func {{nickname}}(c *gin.Context){
-{{#hasFormParams}}
+{{! FORM PARAMS }}
+        {{#hasFormParams}}
     err := r.ParseForm()
     if err != nil {
         w.WriteHeader(500)
         return
     }
-    {{/hasFormParams}}
-{{#hasPathParams}}
+        {{/hasFormParams}}
+        {{#hasPathParams}}
     params := mux.Vars(r)
-{{/hasPathParams}}
-{{#hasQueryParams}}
+        {{/hasPathParams}}
+        {{#hasQueryParams}}
     query := c.Request.URL.Query()
-{{/hasQueryParams}}
-{{#allParams}}
-    {{#isPathParam}}
-        {{#isLong}}
+        {{/hasQueryParams}}
+        {{#allParams}}
+{{! PATH PARAM PARSING WITH GIN:  c.Query("paramName") }}
+            {{#isPathParam}}
+                {{#isLong}}
     {{paramName}}, err := parseInt64Parameter(query.Get("{{paramName}}"))
     if err != nil {
         w.WriteHeader(500)
         return
     }
-        {{/isLong}}
-        {{#isInteger}}
+                {{/isLong}}
+                {{#isInteger}}
     {{paramName}}, err := parseInt32Parameter(query.Get("{{paramName}}"))
     if err != nil {
         w.WriteHeader(500)
         return
     }
-        {{/isInteger}}
-        {{^isLong}}
-            {{^isInteger}}
+                {{/isInteger}}
+                {{^isLong}}{{^isInteger}}
     {{paramName}} := c.Query({{paramName}})
-            {{/isInteger}}
-        {{/isLong}}
-    {{/isPathParam}}
-    {{#isQueryParam}}
-        {{#isLong}}
+                {{/isInteger}}{{/isLong}}
+                {{/isPathParam}}
+{{! QUERY PARAM PARSING WITH GIN:  c.QueryMap("paramName") }}
+                {{#isQueryParam}}
+                    {{#isLong}}
     {{paramName}}, err := parseInt64Parameter(query.Get("{{paramName}}"))
     if err != nil {
         w.WriteHeader(500)
         return
     }
-        {{/isLong}}
-        {{#isInteger}}
+                    {{/isLong}}
+                    {{#isInteger}}
     {{paramName}}, err := parseInt32Parameter(query.Get("{{paramName}}"))
     if err != nil {
         w.WriteHeader(500)
         return
     }
-        {{/isInteger}}
-        {{^isLong}}
-            {{^isInteger}}
-    {{paramName}} := {{#isArray}}strings.Split({{/isArray}}query.Get("{{paramName}}"){{#isArray}}, ","){{/isArray}}{{/isInteger}}{{/isLong}}{{/isQueryParam}}{{#isFormParam}}{{#isFile}}
+                    {{/isInteger}}
+                    {{^isLong}}{{^isInteger}}
+    {{paramName}} := {{#isArray}}strings.Split({{/isArray}}query.Get("{{paramName}}"){{#isArray}}, ","){{/isArray}}
+                    {{/isInteger}}{{/isLong}}
+                {{/isQueryParam}}
+{{! FORM PARAM PARSING WITH GIN:  c.PostFormMap("paramName") }}
+                {{#isFormParam}}
+                    {{#isFile}}
     {{paramName}}, err := ReadFormFileToTempFile(r, "{{paramName}}")
     if err != nil {
         w.WriteHeader(500)
         return
     }
-    {{/isFile}}{{#isLong}}
+                    {{/isFile}}
+                    {{#isLong}}
     {{paramName}}, err := parseInt64Parameter( r.FormValue("{{paramName}}"))
     if err != nil {
         w.WriteHeader(500)
         return
     }
-    {{/isLong}}{{#isInteger}}
+                    {{/isLong}}
+                    {{#isInteger}}
     {{paramName}}, err := parseInt32Parameter( r.FormValue("{{paramName}}"))
     if err != nil {
         w.WriteHeader(500)
         return
     }
-    {{/isInteger}}{{^isFile}}{{^isLong}}
-    {{paramName}} := r.FormValue("{{paramName}}"){{/isLong}}{{/isFile}}{{/isFormParam}}
-{{#isHeaderParam}}
+                    {{/isInteger}}
+                    {{^isFile}}{{^isLong}}
+    {{paramName}} := r.FormValue("{{paramName}}")
+                {{/isLong}}{{/isFile}}
+                {{/isFormParam}}
+                {{#isHeaderParam}}
     {{paramName}} := r.Header.Get("{{paramName}}")
-{{/isHeaderParam}}
-{{#isBodyParam}}
+                {{/isHeaderParam}}
+                {{#isBodyParam}}
     {{paramName}} := &{{dataType}}{}
-    if err := json.NewDecoder(r.Body).Decode(&{{paramName}}); err != nil {
-        w.WriteHeader(500)
+    if err := c.ShouldBind(&{{paramName}}); err != nil {
+        c.String(http.StatusInternalServerError, "unknown error")
         return
     }
-    {{/isBodyParam}}
-{{/allParams}}
+    //TODO: implement the func to generate in impl
+                {{/isBodyParam}}
+        {{/allParams}}
     result, err := c.service.{{nickname}}(r.Context(){{#allParams}}, {{#isBodyParam}}*{{/isBodyParam}}{{paramName}}{{/allParams}})
     //If an error occured, encode the error with the status code
     if err != nil {
@@ -109,4 +123,6 @@ func {{nickname}}(c *gin.Context){
     //If no error, encode the body and the result code
     EncodeJSONResponse(result.Body, &result.Code, w)
 
-}{{/operation}}{{/operations}}
+}
+    {{/operation}}
+{{/operations}}

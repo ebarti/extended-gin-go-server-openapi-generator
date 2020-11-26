@@ -6,3 +6,5 @@
 1. Build the generator first as a docker image
 2. Use the docker image as the generator
 3. To be completed
+
+docker run --rm -v ${PWD}/local aerqnewgen generate \
