@@ -1,21 +1,15 @@
 package com.ebarti.openapi.codegen;
 
 import io.swagger.v3.oas.models.OpenAPI;
+import org.openapitools.codegen.*;
 import org.openapitools.codegen.languages.AbstractGoCodegen;
-import org.openapitools.codegen.CliOption;
-import org.openapitools.codegen.CodegenConstants;
-import org.openapitools.codegen.CodegenOperation;
-import org.openapitools.codegen.CodegenType;
-import org.openapitools.codegen.SupportingFile;
+import org.openapitools.codegen.languages.ElixirClientCodegen;
 import org.openapitools.codegen.meta.features.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ExtendedGoServerGenerator extends AbstractGoCodegen {
 
@@ -72,10 +66,6 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
                 "controller-api.mustache",   // the template to use
                 ".go");       // the extension for each file to write
 
-        apiTemplateFiles.put(
-                "controller-api.mustache",   // the template to use
-                ".go");       // the extension for each file to write
-
 
         /**
          * Template Location.  This is the location which templates will be read from.  The generator
@@ -120,12 +110,33 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
         objs = super.postProcessOperationsWithModels(objs, allModels);
 
         Map<String, Object> operations = (Map<String, Object>) objs.get("operations");
+        List<ExtendedGoServerGenerator.ExtendedCodegenOperation> newOperations = new ArrayList<>();
         List<CodegenOperation> operationList = (List<CodegenOperation>) operations.get("operation");
         for (CodegenOperation op : operationList) {
             if (op.path != null) {
                 op.path = op.path.replaceAll("\\{(.*?)\\}", ":$1");
             }
-            // Process the operations in a format gin can better understand
+            // Check if the operation contains multiple files
+            boolean hasMultipleUploadFiles = false;
+            if (op.httpMethod.equals("Post")) {
+                boolean uploadsFile = false;
+                for (CodegenParameter opFormParam : op.formParams) {
+                    if (opFormParam.isFormParam && opFormParam.isFile) {
+                        if(uploadsFile) {
+                            hasMultipleUploadFiles = true;
+                            break;
+                        }
+                        uploadsFile = true;
+                    }
+                }
+            }
+            ExtendedCodegenOperation newOp = new ExtendedCodegenOperation(op);
+            if(hasMultipleUploadFiles) {
+                newOp.setHasMultipleUploadFiles(Boolean.TRUE);
+            } else {
+                newOp.setHasMultipleUploadFiles(Boolean.FALSE);
+            }
+
 
         }
         return objs;
@@ -230,6 +241,86 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
     @Override
     public String apiFileFolder() {
         return outputFolder + File.separator + apiPackage();
+    }
+
+    class ExtendedCodegenOperation extends CodegenOperation {
+        private boolean hasMultipleUploadFiles;
+        ExtendedCodegenOperation(CodegenOperation o) {
+            super();
+            // Copy all fields of CodegenOperation
+            this.responseHeaders.addAll(o.responseHeaders);
+            this.hasAuthMethods = o.hasAuthMethods;
+            this.hasConsumes = o.hasConsumes;
+            this.hasProduces = o.hasProduces;
+            this.hasParams = o.hasParams;
+            this.hasOptionalParams = o.hasOptionalParams;
+            this.hasRequiredParams = o.hasRequiredParams;
+            this.returnTypeIsPrimitive = o.returnTypeIsPrimitive;
+            this.returnSimpleType = o.returnSimpleType;
+            this.subresourceOperation = o.subresourceOperation;
+            this.isMap = o.isMap;
+            this.isArray = o.isArray;
+            this.isMultipart = o.isMultipart;
+            this.isResponseBinary = o.isResponseBinary;
+            this.isResponseFile = o.isResponseFile;
+            this.hasReference = o.hasReference;
+            this.isRestfulIndex = o.isRestfulIndex;
+            this.isRestfulShow = o.isRestfulShow;
+            this.isRestfulCreate = o.isRestfulCreate;
+            this.isRestfulUpdate = o.isRestfulUpdate;
+            this.isRestfulDestroy = o.isRestfulDestroy;
+            this.isRestful = o.isRestful;
+            this.isDeprecated = o.isDeprecated;
+            this.isCallbackRequest = o.isCallbackRequest;
+            this.uniqueItems = o.uniqueItems;
+            this.path = o.path;
+            this.operationId = o.operationId;
+            this.returnType = o.returnType;
+            this.httpMethod = o.httpMethod;
+            this.returnBaseType = o.returnBaseType;
+            this.returnContainer = o.returnContainer;
+            this.summary = o.summary;
+            this.unescapedNotes = o.unescapedNotes;
+            this.notes = o.notes;
+            this.baseName = o.baseName;
+            this.defaultResponse = o.defaultResponse;
+            this.discriminator = o.discriminator;
+            this.consumes = o.consumes;
+            this.produces = o.produces;
+            this.prioritizedContentTypes = o.prioritizedContentTypes;
+            this.servers = o.servers;
+            this.bodyParam = o.bodyParam;
+            this.allParams = o.allParams;
+            this.bodyParams = o.bodyParams;
+            this.pathParams = o.pathParams;
+            this.queryParams = o.queryParams;
+            this.headerParams = o.headerParams;
+            this.formParams = o.formParams;
+            this.cookieParams = o.cookieParams;
+            this.requiredParams = o.requiredParams;
+            this.optionalParams = o.optionalParams;
+            this.authMethods = o.authMethods;
+            this.tags = o.tags;
+            this.responses = o.responses;
+            this.imports = o.imports;
+            this.examples = o.examples;
+            this.requestBodyExamples = o.requestBodyExamples;
+            this.externalDocs = o.externalDocs;
+            this.vendorExtensions = o.vendorExtensions;
+            this.nickname = o.nickname;
+            this.operationIdOriginal = o.operationIdOriginal;
+            this.operationIdLowerCase = o.operationIdLowerCase;
+            this.operationIdCamelCase = o.operationIdCamelCase;
+            this.operationIdSnakeCase = o.operationIdSnakeCase;
+        }
+
+        public boolean getHasMultipleUploadFiles() {
+            return hasMultipleUploadFiles;
+        }
+
+        public void setHasMultipleUploadFiles(boolean hasMultipleUploadFiles) {
+            this.hasMultipleUploadFiles = hasMultipleUploadFiles;
+        }
     }
 
 }

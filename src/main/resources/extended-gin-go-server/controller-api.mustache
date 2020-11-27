@@ -24,22 +24,19 @@ func {{nickname}}(c *gin.Context) {
 // {{nickname}} - {{{summary}}}
 func {{nickname}}(c *gin.Context){
 {{! VALIDATE PARAMETERS }}
-
         {{#allParams}}
             {{#isPathParam}}
-                {{paramName}} := c.Param("{{paramName}}")
-
                 {{#isLong}}
     {{paramName}}, err := parseInt64Parameter(c.Param("{{paramName}}"))
     if err != nil {
-        w.WriteHeader(500)
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
                 {{/isLong}}
                 {{#isInteger}}
-    {{paramName}}, err := parseInt32Parameter(query.Get("{{paramName}}"))
+    {{paramName}}, err := parseInt32Parameter(c.Param("{{paramName}}"))
     if err != nil {
-        w.WriteHeader(500)
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
                 {{/isInteger}}
@@ -50,43 +47,42 @@ func {{nickname}}(c *gin.Context){
 {{! QUERY PARAM PARSING WITH GIN:  c.QueryMap("paramName") }}
                 {{#isQueryParam}}
                     {{#isLong}}
-    {{paramName}}, err := parseInt64Parameter(query.Get("{{paramName}}"))
+    {{paramName}}, err := parseInt64Parameter(c.Param("{{paramName}}"))
     if err != nil {
-        w.WriteHeader(500)
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
                     {{/isLong}}
                     {{#isInteger}}
-    {{paramName}}, err := parseInt32Parameter(query.Get("{{paramName}}"))
+    {{paramName}}, err := parseInt32Parameter(c.Param("{{paramName}}"))
     if err != nil {
-        w.WriteHeader(500)
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
                     {{/isInteger}}
                     {{^isLong}}{{^isInteger}}
-    {{paramName}} := {{#isArray}}strings.Split({{/isArray}}query.Get("{{paramName}}"){{#isArray}}, ","){{/isArray}}
+    {{paramName}} := {{#isArray}}strings.Split({{/isArray}}c.Param("{{paramName}}"){{#isArray}}, ","){{/isArray}}
                     {{/isInteger}}{{/isLong}}
                 {{/isQueryParam}}
-{{! FORM PARAM PARSING WITH GIN:  c.PostFormMap("paramName") }}
                 {{#isFormParam}}
                     {{#isFile}}
     {{paramName}}, err := ReadFormFileToTempFile(r, "{{paramName}}")
     if err != nil {
-        w.WriteHeader(500)
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
                     {{/isFile}}
                     {{#isLong}}
     {{paramName}}, err := parseInt64Parameter( r.FormValue("{{paramName}}"))
     if err != nil {
-        w.WriteHeader(500)
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
                     {{/isLong}}
                     {{#isInteger}}
     {{paramName}}, err := parseInt32Parameter( r.FormValue("{{paramName}}"))
     if err != nil {
-        w.WriteHeader(500)
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
                     {{/isInteger}}
