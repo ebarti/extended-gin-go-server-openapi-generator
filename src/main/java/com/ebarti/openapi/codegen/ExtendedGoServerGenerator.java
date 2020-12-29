@@ -190,7 +190,8 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
         supportingFiles.add(new SupportingFile("Dockerfile.mustache", "", "Dockerfile"));
         supportingFiles.add(new SupportingFile("routers.mustache", sourceFolder, "routers.go"));
         supportingFiles.add(new SupportingFile("go.mod.mustache", "", "go.mod"));
-        supportingFiles.add(new SupportingFile("utils.mustache", sourceFolder, "utils.go"));
+        supportingFiles.add(new SupportingFile("middleware.mustache", sourceFolder, "middleware.go"));
+        supportingFiles.add(new SupportingFile("impl.mustache", sourceFolder, "impl.go"));
         supportingFiles.add(new SupportingFile("README.mustache", "", "README.md")
                 .doNotOverwrite());
     }
