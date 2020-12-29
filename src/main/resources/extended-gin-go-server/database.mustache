@@ -1,0 +1,13 @@
+{{>partial_header}}
+package {{packageName}}
+
+import (
+    "github.com/gin-gonic/gin"
+)
+
+// Override this file for custom implementation
+func DatabaseHandler() gin.HandlerFunc {
+    return func(c *gin.Context) {
+		c.Next()
+	}
+}

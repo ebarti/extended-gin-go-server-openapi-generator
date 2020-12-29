@@ -23,7 +23,7 @@ type Routes []Route
 
 // NewRouter returns a new router.
 func NewRouter() *gin.Engine {
-	router := gin.new()
+	router := gin.New()
     router.Use(Logger())
     router.Use(Recovery())
 	for _, route := range routes {
