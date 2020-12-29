@@ -16,14 +16,18 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
     private static final Logger LOGGER = LoggerFactory.getLogger(ExtendedGoServerGenerator.class);
 
     // source folder where to write the files
+    protected String packageVersion = "1.0.0";
     protected int serverPort = 8080;
     protected String apiVersion = "1.0.0";
-    protected String initialPackageName = "github.com" + File.separator + "ebarti" + File.separator + "extendedgingoserver";
+    protected String projectName = "openapi-server";
+    protected String sourceFolder = "go";
 
 
     public ExtendedGoServerGenerator() {
         super();
+        // An object is an actual interface{}...
 
+        this.typeMapping.replace("object", "interface{}");
         modifyFeatureSet(features -> features
                 .includeDocumentationFeatures(DocumentationFeature.Readme)
                 .wireFormatFeatures(EnumSet.of(WireFormatFeature.JSON, WireFormatFeature.XML))
@@ -92,10 +96,15 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
         );
 
 
+        cliOptions.add(new CliOption(CodegenConstants.SOURCE_FOLDER, CodegenConstants.SOURCE_FOLDER_DESC)
+                .defaultValue(sourceFolder));
+
         CliOption optServerPort = new CliOption("serverPort", "The network port the generated server binds to");
         optServerPort.setType("int");
         optServerPort.defaultValue(Integer.toString(serverPort));
         cliOptions.add(optServerPort);
+
+        cliOptions.add(CliOption.newBoolean(CodegenConstants.ENUM_CLASS_PREFIX, CodegenConstants.ENUM_CLASS_PREFIX_DESC));
     }
 
     @Override
@@ -116,29 +125,12 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
             if (op.path != null) {
                 op.path = op.path.replaceAll("\\{(.*?)\\}", ":$1");
             }
-            // Check if the operation contains multiple files
-            boolean hasMultipleUploadFiles = false;
-            if (op.httpMethod.equals("Post")) {
-                boolean uploadsFile = false;
-                for (CodegenParameter opFormParam : op.formParams) {
-                    if (opFormParam.isFormParam && opFormParam.isFile) {
-                        if(uploadsFile) {
-                            hasMultipleUploadFiles = true;
-                            break;
-                        }
-                        uploadsFile = true;
-                    }
-                }
-            }
+            //
+
             ExtendedCodegenOperation newOp = new ExtendedCodegenOperation(op);
-            if(hasMultipleUploadFiles) {
-                newOp.setHasMultipleUploadFiles(Boolean.TRUE);
-            } else {
-                newOp.setHasMultipleUploadFiles(Boolean.FALSE);
-            }
-
-
+            newOperations.add(newOp);
         }
+        operations.put("operations", newOperations);
         return objs;
     }
 
@@ -149,7 +141,7 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
         if (additionalProperties.containsKey(CodegenConstants.PACKAGE_NAME)) {
             setPackageName((String) additionalProperties.get(CodegenConstants.PACKAGE_NAME));
         } else {
-            setPackageName(initialPackageName);
+            setPackageName("openapi");
             additionalProperties.put(CodegenConstants.PACKAGE_NAME, this.packageName);
         }
 
@@ -157,17 +149,33 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
          * Additional Properties.  These values can be passed to the templates and
          * are available in models, apis, and supporting files
          */
-        if (additionalProperties.containsKey("apiVersion")) {
-            this.apiVersion = (String) additionalProperties.get("apiVersion");
+        if (additionalProperties.containsKey(CodegenConstants.PACKAGE_VERSION)) {
+            this.setPackageVersion((String) additionalProperties.get(CodegenConstants.PACKAGE_VERSION));
         } else {
-            additionalProperties.put("apiVersion", apiVersion);
+            additionalProperties.put(CodegenConstants.PACKAGE_VERSION, packageVersion);
         }
 
-        if (additionalProperties.containsKey("serverPort")) {
-            this.serverPort = Integer.parseInt((String) additionalProperties.get("serverPort"));
+        if (additionalProperties.containsKey(CodegenConstants.SOURCE_FOLDER)) {
+            this.setSourceFolder((String) additionalProperties.get(CodegenConstants.SOURCE_FOLDER));
+        } else {
+            additionalProperties.put(CodegenConstants.SOURCE_FOLDER, sourceFolder);
+        }
+
+        if (additionalProperties.containsKey("serverPort")  && additionalProperties.get("serverPort") instanceof Integer) {
+            this.setServerPort((int) additionalProperties.get("serverPort"));
+        } else if (additionalProperties.containsKey("serverPort") && additionalProperties.get("serverPort") instanceof String) {
+            try {
+                this.setServerPort(Integer.parseInt(additionalProperties.get("serverPort").toString()));
+                additionalProperties.put("serverPort", serverPort);
+            } catch (NumberFormatException e) {
+                LOGGER.warn("serverPort is not a valid integer... defaulting to {}", serverPort);
+                additionalProperties.put("serverPort", serverPort);
+            }
         } else {
             additionalProperties.put("serverPort", serverPort);
         }
+
+
 
         modelPackage = packageName;
         apiPackage = packageName;
@@ -180,18 +188,16 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
         supportingFiles.add(new SupportingFile("openapi.mustache", "api", "openapi.yaml"));
         supportingFiles.add(new SupportingFile("main.mustache", "", "main.go"));
         supportingFiles.add(new SupportingFile("Dockerfile.mustache", "", "Dockerfile"));
-        supportingFiles.add(new SupportingFile("routers.mustache", packageName, "routers.go"));
+        supportingFiles.add(new SupportingFile("routers.mustache", sourceFolder, "routers.go"));
         supportingFiles.add(new SupportingFile("go.mod.mustache", "", "go.mod"));
-        supportingFiles.add(new SupportingFile("utils.mustache", packageName, "utils.go"));
-        supportingFiles.add(new SupportingFile("impl.mustache", packageName, "impl.go"));
-        supportingFiles.add(new SupportingFile("helpers.mustache", packageName, "helpers.go"));
+        supportingFiles.add(new SupportingFile("utils.mustache", sourceFolder, "utils.go"));
         supportingFiles.add(new SupportingFile("README.mustache", "", "README.md")
                 .doNotOverwrite());
     }
 
     @Override
     public String apiPackage() {
-        return packageName;
+        return sourceFolder;
     }
 
 
@@ -201,6 +207,7 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
      * @return the CodegenType for this generator
      * @see org.openapitools.codegen.CodegenType
      */
+    @Override
     public CodegenType getTag() {
         return CodegenType.SERVER;
     }
@@ -211,10 +218,10 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
      *
      * @return the friendly name for the generator
      */
+    @Override
     public String getName() {
         return "extended-gin-go-server";
     }
-
 
     /**
      * Returns human-friendly help for the generator.  Provide the consumer with help
@@ -222,6 +229,7 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
      *
      * @return A string value for the help message
      */
+    @Override
     public String getHelp() {
         return "Generates an extended gin-go-server server library.";
     }
@@ -230,6 +238,7 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
      * Location to write model files.  You can use the modelPackage() as defined when the class is
      * instantiated
      */
+    @Override
     public String modelFileFolder() {
         return outputFolder + File.separator + apiPackage();
     }
@@ -243,8 +252,24 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
         return outputFolder + File.separator + apiPackage();
     }
 
+    // Other properties
+    public void setSourceFolder(String sourceFolder) {
+        this.sourceFolder = sourceFolder;
+    }
+
+    public void setPackageVersion(String packageVersion) { this.packageVersion = packageVersion; }
+
+    public void setServerPort(int serverPort) {
+        this.serverPort = serverPort;
+    }
+
+    public String outputFolder() { return outputFolder; }
+
+
+    // Helper extended operation class
     class ExtendedCodegenOperation extends CodegenOperation {
-        private boolean hasMultipleUploadFiles;
+        public boolean hasBindParams = false; // form or query
+
         ExtendedCodegenOperation(CodegenOperation o) {
             super();
             // Copy all fields of CodegenOperation
@@ -312,14 +337,7 @@ public class ExtendedGoServerGenerator extends AbstractGoCodegen {
             this.operationIdLowerCase = o.operationIdLowerCase;
             this.operationIdCamelCase = o.operationIdCamelCase;
             this.operationIdSnakeCase = o.operationIdSnakeCase;
-        }
-
-        public boolean getHasMultipleUploadFiles() {
-            return hasMultipleUploadFiles;
-        }
-
-        public void setHasMultipleUploadFiles(boolean hasMultipleUploadFiles) {
-            this.hasMultipleUploadFiles = hasMultipleUploadFiles;
+            this.hasBindParams = o.getHasFormParams() || o.getHasQueryParams();
         }
     }
 

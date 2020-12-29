@@ -25,12 +25,7 @@ type Routes []Route
 func NewRouter() *gin.Engine {
 	router := gin.new()
     router.Use(Logger())
-    router.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
-		if err, ok := recovered.(string); ok {
-			c.String(http.StatusInternalServerError, fmt.Sprintf("error: %s", err))
-		}
-		c.AbortWithStatus(http.StatusInternalServerError)
-	}))
+    router.Use(Recovery())
 	for _, route := range routes {
 		switch route.Method {
 		case http.MethodGet:

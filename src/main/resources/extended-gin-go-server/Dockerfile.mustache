@@ -1,20 +1,17 @@
-FROM golang:alpine AS builder
-RUN apk add --no-cache git
+FROM golang AS builder
+ENV GO111MODULE=on
+ENV CGO_ENABLED=0
+WORKDIR $GOPATH/src
+COPY {{outputFolder}} .
+WORKDIR $GOPATH/src/{{sourceFolder}}
+RUN go mod download
 
-WORKDIR /go/src
-COPY . .
-RUN go get -d -v ./...
+RUN go test ./...
 
-{{#typeARM64}}
-RUN GIN_MODE=release GOOS=linux GOARCH=amd64 go build -v .
-FROM arm64/alpine AS runtime
-{{/typeARM64}}
+RUN GIN_MODE=release go build -a -o /goserver main.go
 
-{{#typeAMD64}}
-RUN GIN_MODE=release GOOS=linux GOARCH=arm64 go build -v .
-FROM amd64/alpine AS runtime
-{{/typeAMD64}}
+FROM SCRATCH AS runtime
 
-COPY --from=builder /go/src/{{packageName}} ./
+COPY --from=builder /goserver /bin
 EXPOSE {{serverPort}}/tcp
-ENTRYPOINT ["./proof-of-concept-go"]
+ENTRYPOINT ["/bin/goserver"]

@@ -1,5 +1,5 @@
 {{>partial_header}}
-package {{packageName}}
+package {{modelPackage}}
 {{#models}}{{#imports}}
 {{#-first}}import (
 {{/-first}}	"{{import}}"{{#-last}}
@@ -16,7 +16,7 @@ const (
 	{{/allowableValues}}
 ){{/isEnum}}{{^isEnum}}{{#description}}
 // {{classname}} - {{{description}}}{{/description}}
-type {{classname}} struct {
+type {{classname}}Type struct {
 {{#vars}}{{#description}}
 	// {{{description}}}{{/description}}
 	{{name}} {{#isNullable}}*{{/isNullable}}{{{dataType}}} `json:"{{baseName}}{{^required}},omitempty{{/required}}"{{#vendorExtensions.x-go-custom-tag}} {{{.}}}{{/vendorExtensions.x-go-custom-tag}}`
