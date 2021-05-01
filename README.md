@@ -24,7 +24,7 @@ docker build . -t ext-go-gin-generator
 
 #### Step 3
 ```shell
-docker run --rm -v ${PWD}:/local gext-go-gin-generator generate \
+docker run --rm -v ${PWD}:/local ext-go-gin-generator generate \
   -i /local/mylocalPath/spec/myApiSpec.yaml \
   -c /local/mylocalPath/config/myConfig.yaml \
   -g extended-gin-go-server \
